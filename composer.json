@@ -1,0 +1,22 @@
+{
+    "name": "lussoluca/coding-standard",
+    "type": "phpcodesniffer-standard",
+    "homepage": "https://github.com/sparkfabrik/coding-standard",
+    "keywords": ["drupal", "phpcs"],
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "SparkFabrik\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "bin-dir": "bin",
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "phpstan/extension-installer": true
+        },
+        "sort-packages": true
+    }
+}
