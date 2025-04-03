@@ -9,6 +9,7 @@ use PHP_CodeSniffer\Sniffs\Sniff;
  * Checks that there is a blank line before return and continue statements.
  */
 class BlankLineBeforeReturnContinueSniff implements Sniff {
+
   /**
    * A list of tokenizers this sniff supports.
    *
@@ -36,52 +37,44 @@ class BlankLineBeforeReturnContinueSniff implements Sniff {
    */
   public function process(File $phpcsFile, $stackPtr): void {
     $tokens = $phpcsFile->getTokens();
-    $current = $tokens[$stackPtr];
-    $currentLine = $tokens[$stackPtr]['line'];
+    $currentToken = $tokens[$stackPtr];
+    $currentTokenLine = $tokens[$stackPtr]['line'];
 
     // If we're not inside a scope (function, if, loop, etc.) then ignore.
-    if (empty($current['conditions'])) {
+    if (empty($currentToken['conditions'])) {
       return;
     }
 
-    // Find the previous open curly bracket.
-    $prevOpenCurlyBracket = $phpcsFile->findPrevious(
-      T_OPEN_CURLY_BRACKET,
+    // Find the previous non-whitespace token.
+    $prevToken = $phpcsFile->findPrevious(
+      T_WHITESPACE,
       ($stackPtr - 1),
+      NULL,
+      TRUE,
     );
 
-    if ($prevOpenCurlyBracket === FALSE) {
+    if ($prevToken === FALSE) {
       return;
     }
 
-    // Now let's check if there is a blank line before the return/continue statement.
-    $openCurlyBracketLine = $tokens[$prevOpenCurlyBracket]['line'];
+    // If the previous token is a semicolon, there must be a blank line
+    // before the return/continue statement.
+    if ($tokens[$prevToken]['code'] === T_SEMICOLON) {
+      $prevTokenLine = $tokens[$prevToken]['line'];
 
-    // The return/continue statement is the first statement in the block.
-    if (($currentLine - $openCurlyBracketLine) == 1) {
-      return;
-    }
+      if (($currentTokenLine - $prevTokenLine) < 2) {
+        $type = $tokens[$stackPtr]['content'];
 
-    // Find the previous semicolon.
-    $prevSemicolon = $phpcsFile->findPrevious(
-      T_SEMICOLON,
-      ($stackPtr - 1),
-    );
-
-    if ($prevSemicolon === FALSE) {
-      return;
-    }
-
-    // Now let's check if there is a blank line before the return/continue statement.
-    $openSemicolon = $tokens[$prevSemicolon]['line'];
-
-    if (($currentLine - $openSemicolon) < 2) {
-      $type = $tokens[$stackPtr]['content'];
-
-      $error = 'There must be a blank line before %s statement';
-      $fix = $phpcsFile->addFixableError($error, $stackPtr, 'MissingBlankLine', [$type]);
-      if ($fix === TRUE) {
-        $phpcsFile->fixer->addNewlineBefore($stackPtr);
+        $error = 'There must be a blank line before %s statement';
+        $fix = $phpcsFile->addFixableError(
+          $error,
+          $stackPtr,
+          'MissingBlankLine',
+          [$type]
+        );
+        if ($fix === TRUE) {
+          $phpcsFile->fixer->addNewlineBefore($stackPtr);
+        }
       }
     }
   }
